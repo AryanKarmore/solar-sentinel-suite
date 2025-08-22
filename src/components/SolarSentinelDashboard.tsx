@@ -2,10 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Activity, AlertTriangle, Radio, Satellite, Zap, Shield, Eye, Magnet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Activity, AlertTriangle, Radio, Satellite, Zap, Shield, Eye, Magnet, BarChart3 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { useEffect, useState } from "react";
 import heroImage from "@/assets/solar-cme-hero.jpg";
+import InstrumentDetailPanel from "./InstrumentDetailPanel";
 
 // Mock data generation for real-time simulation
 const generateMockData = () => ({
@@ -32,11 +34,36 @@ const generateTimeSeriesData = () => {
   return data;
 };
 
+const generateInstrumentData = (name: string, fullName: string, value: number) => {
+  const cmeTypes = ["Fast CME", "Slow CME", "Halo CME", "Partial CME", "No Event"];
+  const intensities = ["Low", "Medium", "High"];
+  
+  return {
+    name,
+    fullName,
+    currentReading: value,
+    classification: {
+      type: cmeTypes[Math.floor(Math.random() * cmeTypes.length)],
+      confidence: Math.random() * 30 + 70, // 70-100%
+      intensity: intensities[Math.floor(Math.random() * intensities.length)],
+      earthDirected: Math.random() > 0.7,
+    },
+    detection: {
+      status: value > 80 ? "ACTIVE" : value > 60 ? "MONITORING" : "CLEAR" as "ACTIVE" | "MONITORING" | "CLEAR",
+      lastEvent: `${Math.floor(Math.random() * 24)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+      eventCount: Math.floor(Math.random() * 12),
+      threshold: 75,
+    },
+    timeSeries: [] // Will be generated in the detail panel
+  };
+};
+
 const SolarSentinelDashboard = () => {
   const [instrumentData, setInstrumentData] = useState(generateMockData());
   const [timeSeriesData] = useState(generateTimeSeriesData());
   const [riskIndex, setRiskIndex] = useState(0);
   const [cmeDetected, setCmeDetected] = useState(false);
+  const [selectedInstrument, setSelectedInstrument] = useState(null);
 
   // Simulate real-time data updates
   useEffect(() => {
@@ -71,42 +98,48 @@ const SolarSentinelDashboard = () => {
       fullName: "Solar Terrestrial Environment Probe",
       icon: Satellite,
       value: instrumentData.step,
-      status: instrumentData.step > 80 ? "alert" : "normal"
+      status: instrumentData.step > 80 ? "alert" : "normal",
+      data: generateInstrumentData("STEP", "Solar Terrestrial Environment Probe", instrumentData.step)
     },
     {
       name: "SUIT",
       fullName: "Solar Ultraviolet Imaging Telescope",
       icon: Eye,
       value: instrumentData.suit,
-      status: instrumentData.suit > 80 ? "alert" : "normal"
+      status: instrumentData.suit > 80 ? "alert" : "normal",
+      data: generateInstrumentData("SUIT", "Solar Ultraviolet Imaging Telescope", instrumentData.suit)
     },
     {
       name: "PAPA",
       fullName: "Plasma Analyser Package",
       icon: Activity,
       value: instrumentData.papa,
-      status: instrumentData.papa > 80 ? "alert" : "normal"
+      status: instrumentData.papa > 80 ? "alert" : "normal",
+      data: generateInstrumentData("PAPA", "Plasma Analyser Package", instrumentData.papa)
     },
     {
       name: "MAG",
       fullName: "Magnetometer",
       icon: Magnet,
       value: instrumentData.mag,
-      status: instrumentData.mag > 80 ? "alert" : "normal"
+      status: instrumentData.mag > 80 ? "alert" : "normal",
+      data: generateInstrumentData("MAG", "Magnetometer", instrumentData.mag)
     },
     {
       name: "SoLEXS",
       fullName: "Solar Low Energy X-ray Spectrometer",
       icon: Zap,
       value: instrumentData.solexs,
-      status: instrumentData.solexs > 80 ? "alert" : "normal"
+      status: instrumentData.solexs > 80 ? "alert" : "normal",
+      data: generateInstrumentData("SoLEXS", "Solar Low Energy X-ray Spectrometer", instrumentData.solexs)
     },
     {
       name: "SWISS",
       fullName: "Solar Wind Ion Spectrometer",
       icon: Radio,
       value: instrumentData.swiss,
-      status: instrumentData.swiss > 80 ? "alert" : "normal"
+      status: instrumentData.swiss > 80 ? "alert" : "normal",
+      data: generateInstrumentData("SWISS", "Solar Wind Ion Spectrometer", instrumentData.swiss)
     }
   ];
 
@@ -123,7 +156,7 @@ const SolarSentinelDashboard = () => {
             Solar Sentinel Suite
           </h1>
           <p className="text-muted-foreground mt-2">
-            Multi-Modal CME Intelligence System
+            Multi-Modal CME Intelligence System - Classification • Detection • Forecasting
           </p>
         </div>
       </div>
@@ -135,7 +168,8 @@ const SolarSentinelDashboard = () => {
             <AlertTriangle className="h-4 w-4 text-destructive" />
             <AlertDescription className="text-destructive-foreground">
               <strong>CME EVENT DETECTED:</strong> Coronal Mass Ejection in progress. 
-              Estimated Earth arrival: 18-72 hours. Monitor space weather conditions.
+              Multi-modal analysis shows {instruments.filter(i => i.status === "alert").length} instruments detecting anomalies.
+              Estimated Earth arrival: 18-72 hours.
             </AlertDescription>
           </Alert>
         )}
@@ -145,7 +179,8 @@ const SolarSentinelDashboard = () => {
           {/* Unified CME Risk Index */}
           <Card className="lg:col-span-1 border-border shadow-glow-cosmic">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">CME Risk Index</CardTitle>
+              <CardTitle className="text-2xl">Unified CME Risk Index</CardTitle>
+              <p className="text-sm text-muted-foreground">Multi-Modal Fusion Score</p>
             </CardHeader>
             <CardContent className="text-center space-y-6">
               <div className="relative w-32 h-32 mx-auto">
@@ -230,12 +265,13 @@ const SolarSentinelDashboard = () => {
           </Card>
         </div>
 
-        {/* Instrument Grid */}
+        {/* Instrument Grid with Enhanced Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {instruments.map((instrument) => {
             const Icon = instrument.icon;
             return (
-              <Card key={instrument.name} className="border-border hover:shadow-glow-solar transition-all duration-300">
+              <Card key={instrument.name} className="border-border hover:shadow-glow-solar transition-all duration-300 cursor-pointer"
+                    onClick={() => setSelectedInstrument(instrument.data)}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -255,7 +291,10 @@ const SolarSentinelDashboard = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold">{Math.round(instrument.value)}</span>
-                      <span className="text-sm text-muted-foreground">Activity Level</span>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <BarChart3 className="h-3 w-3" />
+                        Analyze
+                      </Button>
                     </div>
                     <Progress 
                       value={instrument.value} 
@@ -263,6 +302,20 @@ const SolarSentinelDashboard = () => {
                         instrument.status === "alert" ? "[&>div]:bg-destructive" : "[&>div]:bg-primary"
                       }`}
                     />
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="text-center">
+                        <div className="font-semibold text-accent">CME</div>
+                        <div>{instrument.data.classification.type.split(' ')[0]}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-warning">Detection</div>
+                        <div>{instrument.data.detection.status}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-success">Confidence</div>
+                        <div>{Math.round(instrument.data.classification.confidence)}%</div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -275,7 +328,7 @@ const SolarSentinelDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-accent" />
-              Proton Flux Density
+              Proton Flux Density - Multi-Instrument Correlation
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -300,6 +353,14 @@ const SolarSentinelDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Instrument Detail Panel */}
+      {selectedInstrument && (
+        <InstrumentDetailPanel 
+          instrument={selectedInstrument}
+          onClose={() => setSelectedInstrument(null)}
+        />
+      )}
     </div>
   );
 };
